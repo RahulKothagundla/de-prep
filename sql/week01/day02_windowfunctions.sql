@@ -88,11 +88,51 @@ GROUP BY dept;
 
 
 
+/*
+LC 176 Second Highest Salary 
+
+SELECT MAX(salary) as SecondHighestSalary
+FROM (
+    SELECT salary, 
+    DENSE_RANK() OVER(ORDER BY salary DESC) as HighestSalary
+    FROM Employee
+) temp
+WHERE HighestSalary = 2
+*/
+
+/*
+LC 178 Rank Scores
+
+SELECT score,
+    DENSE_RANK() OVER(ORDER BY score DESC) as rank
+FROM scores
+*/
+
+/*
+LC 184 Department Highest Salary
+
+SELECT Department, Employee, salary
+FROM (
+    SELECT d.name as Department, e.name as Employee, e.salary as Salary,
+    RANK() OVER(PARTITION BY d.name ORDER BY e.salary DESC) as rn
+    FROM employee e
+    JOIN department d
+    ON e.departmentId = d.id
+)
+WHERE rn =1
+*/
 
 
+/*
+LC 185 Department Top Three Salaries
 
-
-
-
-
-
+SELECT Department, Employee, salary
+FROM (
+    SELECT d.name as Department, e.name as Employee, e.salary as Salary,
+    DENSE_RANK() OVER(PARTITION BY d.name ORDER BY e.salary DESC) as rn
+    FROM employee e
+    JOIN department d
+    ON e.departmentId = d.id
+)
+WHERE rn <= 3
+*/
