@@ -20,8 +20,30 @@ WHERE avg_salary > 50000;
 
 \echo '--- A2: customers who never ordered ---'
 
+\echo '--- A2 (NOT IN) ---'
+SELECT *
+FROM customers
+WHERE customer_id NOT IN (
+    SELECT customer_id
+    FROM orders
+);
+
+
+\echo '--- A2 (LEFT JOIN) ---'
 WITH distinct_customers AS(
-    SELECT DISTINCT(customer_id) as unique_customer_id
+    SELECT Distinct customer_id  as dist_customer
+    FROM orders 
+)
+Select * 
+FROM customers c
+LEFT JOIN distinct_customers d
+ON c.customer_id = d.dist_customer
+WHERE d.dist_customer IS NULL;
+
+
+\echo '--- A2 (NOT EXISTS) ---'
+WITH distinct_customers AS(
+    SELECT (customer_id) as unique_customer_id
     FROM orders
 )
 SELECT * 
@@ -30,6 +52,18 @@ WHERE NOT EXISTS(
     SELECT 1
     FROM distinct_customers d
     WHERE d.unique_customer_id = c.customer_id
+);
+
+
+\echo '--- A2 (NOT IN with a NULL in the list: expect 0 rows) ---'
+
+SELECT *
+FROM customers
+WHERE customer_id NOT IN (
+    SELECT customer_id
+    FROM orders
+    UNION ALL
+    SELECT NULL
 );
 
 
@@ -65,6 +99,13 @@ WHERE e.salary > a.avg_salary;
 
 \echo '--- E2: customers above the average customer total ---'
 
+
+-- Why customer 103 is left out:
+-- Order 5 (for customer_id 103) has amount = NULL.
+-- SUM(amount) ignores NULLs and evaluates to NULL for customer 103.
+-- AVG() also ignores NULL values, so the average is computed across non-NULL totals (101: 950, 102: 900 -> avg 925),
+-- and customer 103's NULL total is excluded from both the average calculation and the final comparison (> avg).
+
 WITH total_order_amount_per_customer AS(
     SELECT customer_id, SUM(amount) as total
     FROM orders
@@ -82,7 +123,6 @@ WHERE t.total > a.avg_total;
 
 \echo '--- E3: recursive hierarchy: level + top manager ---'
 
-
 WITH RECURSIVE manager_levels AS(
     SELECT emp_id, name, manager_id, 1 as level, name AS top_manager
     FROM employees
@@ -96,7 +136,8 @@ WITH RECURSIVE manager_levels AS(
     ON e.manager_id = m.emp_id
 )
 SELECT emp_id, name, top_manager, level
-FROM manager_levels;
+FROM manager_levels
+ORDER BY top_manager, level;
 
 
 
